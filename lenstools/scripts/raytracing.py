@@ -250,7 +250,7 @@ def singleRedshift(pool,batch,settings,batch_id):
 			if unit=="Mpc/h":
 				distance = float(distance)*model.Mpc_over_h
 			else:
-				distance = float(distance)*getattr(u,"unit")
+				distance = float(distance)*getattr(u,unit)
 
 			lens_redshift = float(line[2].split("=")[1])
 
