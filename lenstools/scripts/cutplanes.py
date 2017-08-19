@@ -25,7 +25,7 @@ from lenstools import configuration
 
 import numpy as np
 from astropy.cosmology import z_at_value
-
+from scipy.interpolate import interp1d
 #FFT engine
 fftengine = lenstools.simulations.nbody.fftengine
 
@@ -182,6 +182,22 @@ def cnstTime(pool,batch,settings,batch_id,override):
 			snap.cosmology = model.cosmology
 			snap._header["comoving_distance"] = snap.cosmology.comoving_distance(snap.header["redshift"])
 
+####### JL: add neutrino fluid to the density 
+####### delta_tot = delta_c + delta_nu
+####### delta_tot = [ sqrt(P_nu) (1-fnu) / (sqrt(P_tot) - fnu sqrt(P_nu)) + 1] delta_c
+####### fnu = 1/omega_m / h^2 *M_nu/93.14
+#DC = snap.cosmology.comoving_distance(snap.header["redshift"]).value ## unit of Mpc
+		snap_folder = snapshot_filename[:-12]
+		k_bird, Ptot = snap_folder+ 'powerspec_nu_%03d.txt'%(n)
+		k_bird, Pnu = snap_folder+ 'powerspec_tot_%03d.txt'%(n)
+		k_bird *= 1e3 ## unit of h/Mpc
+		fnu = cosmology.Onu0/cosmology.Om0
+		Ptot[Ptot<0]=0.
+		Pnu[Pnu<0]=0.
+		ratio_tot2cdm = sqrt(Pnu)*(1-fnu) / (sqrt(Ptot)-fnu*sqrt(Pnu)) + 1.0
+		lpix_andrea = 2.0*pi/k_bird/512.0
+		ratio_interp = interp1d(lpix_andrea, ratio_tot2cdm, fill_value='extrapolate')
+
 		if pool is not None:
 			logdriver.debug("Task {0} read nbody snapshot from {1}".format(pool.comm.rank,snapshot_filename))
 
@@ -211,7 +227,7 @@ def cnstTime(pool,batch,settings,batch_id,override):
 				#####Do the cutting#########
 				############################
 				
-				plane,resolution,NumPart = snap.cutPlaneGaussianGrid(normal=normal,center=pos,thickness=thickness,left_corner=np.zeros(3)*snap.Mpc_over_h,**kwargs)
+				plane,resolution,NumPart = snap.cutPlaneGaussianGrid(normal=normal,center=pos,thickness=thickness,left_corner=np.zeros(3)*snap.Mpc_over_h,add_nu_density=1,ratio_interp=ratio_interp,**kwargs)
 				
 				#######################################################################################################################################
 
