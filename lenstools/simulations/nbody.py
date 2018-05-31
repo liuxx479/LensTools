@@ -519,7 +519,7 @@ class NbodySnapshot(object):
 
 	###################################################################################################################################################
 
-	def cutPlaneGaussianGrid(self,normal=2,thickness=0.5*Mpc,center=7.0*Mpc,plane_resolution=4096,left_corner=None,thickness_resolution=1,smooth=1,kind="density",**kwargs):
+	def cutPlaneGaussianGrid(self,normal=2,thickness=0.5*Mpc,center=7.0*Mpc,plane_resolution=4096,left_corner=None,thickness_resolution=1,smooth=1,kind="density",add_nu_density=0,ratio_interp=1,**kwargs):
 
 		"""
 		Cuts a density (or lensing potential) plane out of the snapshot by computing the particle number density on a slab and performing Gaussian smoothing; the plane coordinates are cartesian comoving
@@ -770,6 +770,14 @@ class NbodySnapshot(object):
 
 			density_ft = fftengine.rfftn(density_projected)
 
+                        #### JL: add neutrino density
+                        if add_nu_density:
+                                print '\n !!!!! min,max of andreas np.sqrt(l_squared)', np.amin(np.sqrt(l_squared)), np.amax(np.sqrt(l_squared))
+                                iratio = ratio_interp(np.sqrt(l_squared))
+                                density_ft *= iratio
+                                print 'mean(iratio) of delta_tot / delta_CDM', np.mean(iratio),np.amin(iratio),np.amax(iratio)
+                               
+
 			#Zero out the zeroth frequency
 			density_ft[0,0] = 0.0
 
@@ -789,6 +797,7 @@ class NbodySnapshot(object):
 				density_ft *= np.exp(-0.5*((2.0*np.pi*smooth)**2)*l_squared)
 
 			#Revert the FFT
+			print 'Revert the FFT'
 			lensing_potential = fftengine.irfftn(density_ft)
 
 			if (self.pool is None) or (self.pool.is_master()):

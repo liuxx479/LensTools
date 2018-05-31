@@ -287,7 +287,9 @@ def singleRedshift(pool,batch,settings,batch_id):
 		last_timestamp = now
 
 		#Start a bucket of light rays from a regular grid of initial positions
-		b = np.linspace(0.0,map_angle.value,resolution)
+		#b = np.linspace(0.0,map_angle.value,resolution)
+		#### JL add 16 times rays
+		b = np.linspace(0.0,map_angle.value,resolution*4)
 		xx,yy = np.meshgrid(b,b)
 		pos = np.array([xx,yy]) * map_angle.unit
 
@@ -307,8 +309,10 @@ def singleRedshift(pool,batch,settings,batch_id):
 
 			#Compute shear,convergence and omega from the jacobians
 			if settings.convergence or settings.reduced_shear or settings.reduced_shear_convergence:
-		
-				convMap = ConvergenceMap(data=1.0-0.5*(jacobian[0]+jacobian[3]),angle=map_angle,cosmology=map_batch.cosmology,redshift=source_redshift)
+				convMap = ConvergenceMap(data=np.mean( (1.0-0.5*(jacobian[0]+jacobian[3])).reshape(resolution,4,resolution,4),
+                                          axis=(1,3)),angle=map_angle,cosmology=map_batch.cosmology,redshift=source_redshift)
+				######## JL reduce to original size by average 4x4=16 pixels
+                                #convMap = ConvergenceMap(data=1.0-0.5*(jacobian[0]+jacobian[3]),angle=map_angle,cosmology=map_batch.cosmology,redshift=source_redshift)
 				
 				if settings.convergence:
 					savename = batch.syshandler.map(os.path.join(save_path,"WLconv_z{0:.2f}_{1:04d}r.{2}".format(source_redshift,r+1,settings.format)))
