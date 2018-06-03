@@ -210,7 +210,11 @@ def singleRedshift(pool,batch,settings,batch_id):
 
 	#We need one of these for cycles for each map random realization
 	for rloc,r in enumerate(range(first_map_realization,last_map_realization)):
-
+		######## JL skip this map if already exist
+		if settings.convergence:
+              		savename = batch.syshandler.map(os.path.join(save_path,"WLconv_z{0:.2f}_{1:04d}r.{2}".format(source_redshift,r+1,settings.format)))
+			if os.path.isfile(savename):
+				continue
 		#Set random seed to generate the realizations
 		np.random.seed(settings.seed + r)
 
